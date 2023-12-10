@@ -67,6 +67,11 @@ def generate_delta(digits, unit, timeword):
         return datetime.timedelta(hours=delta)
     if unit in ["days", "dys", "day", "d"]:
         return datetime.timedelta(days=delta)
+    if unit in ["years", "year", "y"]:
+        # timedelta function does not have a year parameter
+        # therefore get the total number of days * 365
+        year_delta = delta * 365
+        return datetime.timedelta(days=year_delta)
 
     raise ValueError(f"Invalid unit {unit}")
 
