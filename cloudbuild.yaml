@@ -11,11 +11,11 @@ steps:
     args:
       - "run"
       - "deploy"
-      - "SERVICE-NAME"
+      - "in-utc-api"
       - "--image"
       - "gcr.io/$PROJECT_ID/in-utc-api:$COMMIT_SHA"
       - "--region"
-      - "REGION"
+      - "us-central1"
 images:
   - "gcr.io/$PROJECT_ID/in-utc-api:$COMMIT_SHA"
 options:
