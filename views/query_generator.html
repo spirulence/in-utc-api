@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTC Time</title>
+    <script src="static/index.js" defer></script>
+</head>
+
+<body>
+    <div class="date-range-container">
+        <label for="start-timestamp">Start Date</label>
+        <input id="start-timestamp" type="datetime-local" />
+        <br>
+        <label for="end-timestamp">End Date</label>
+        <input id="end-timestamp" type="datetime-local" />
+    </div>
+    <div class="radiobutton-container">
+        <input type="radio" id="lucene-option" name="query-type" value="Lucene" checked />
+        <label for="luence-option">Lucene</label>
+    </div>
+    <div class="output-container">
+        <textarea id="query-output"></textarea>
+    </div>
+    <button id="submit">Submit</button>
+</body>
+
+</html>

@@ -1,7 +1,20 @@
 import datetime
 from os import environ
 
-from bottle import error, redirect, request, response, route, run, view
+from bottle import (
+    error,
+    get,
+    post,
+    redirect,
+    request,
+    response,
+    route,
+    run,
+    static_file,
+    view,
+)
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 from pytz import timezone
 
 
@@ -30,6 +43,60 @@ TIMEZONE_SHORTHANDS = {
     "et": "US/Eastern",
     "e": "US/Eastern",
 }
+
+
+@get("/api/<tz_format>")
+def handle_tz_request(tz_format: str) -> dict:
+    func = FORMATTERS.get(tz_format)
+    try:
+        if not func:
+            raise ValueError("Invalid Timezone specified")
+        today = datetime.datetime.now()
+        val = func(today)
+        return {"ok": True, "data": val}
+    except ValueError as e:
+        return {"ok": False, "message": str(e)}
+
+
+schema = {
+    "type": "object",
+    "properties": {
+        "start_timestamp": {"type": "string"},
+        "end_timestamp": {"type": "string"},
+        "query_type": {"type": "string"},
+    },
+}
+
+
+@route("/static/<filename>")
+def server_static(filename):
+    return static_file(filename, root="static/")
+
+
+@post("/api/query")
+def handle_generate_query_range_request() -> str:
+    try:
+        data = request.json
+        validate(instance=data, schema=schema)
+        start_timestamp = datetime.datetime.fromisoformat(
+            data["start_timestamp"]
+        )
+        end_timestamp = datetime.datetime.fromisoformat(data["end_timestamp"])
+
+        fmt_start_timestamp = iso(start_timestamp)
+        fmt_end_timestamp = iso(end_timestamp)
+        return {
+            "ok": True,
+            "data": f"@timestamp:[ {fmt_start_timestamp} TO {fmt_end_timestamp} ]",
+        }
+    except ValidationError as e:
+        return {"ok": False, "message": str(e)}
+
+
+@get("/query")
+@view("query_generator")
+def handle_query_generation():
+    return {}
 
 
 def dual_format(function):
