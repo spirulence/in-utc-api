@@ -13,7 +13,25 @@ def unix(dt):
     return str(int(dt.timestamp()))
 
 
-FORMATTERS = {"iso": iso, "i": iso, "unix": unix, "u": unix}
+def human(dt):
+    """Return a human readable datetime string.
+
+    Example: 'Monday, December 01, 2025 12:00:00 UTC'
+    """
+    # Try to get a timezone name from tzinfo; fall back to 'UTC'
+    tzname = "UTC"
+    try:
+        if getattr(dt, "tzinfo", None):
+            maybe = dt.tzname()
+            if maybe:
+                tzname = maybe
+    except Exception:
+        tzname = "UTC"
+
+    return dt.strftime("%A, %B %d, %Y %H:%M:%S ") + tzname
+
+
+FORMATTERS = {"iso": iso, "i": iso, "unix": unix, "u": unix, "human": human, "h": human}
 FORWARDS_TIMEWORDS = {"later", "fromnow", "from-now", "future"}
 BACKWARDS_TIMEWORDS = {"ago", "back"}
 TIMEZONE_SHORTHANDS = {
@@ -34,11 +52,20 @@ TIMEZONE_SHORTHANDS = {
 
 def dual_format(function):
     def wrapper(*args, **kwargs):
-        host = request.urlparts.netloc
-        if host.startswith("unix.") or host.startswith("u."):
-            return function(*args, fmt=unix, **kwargs)
+        # Allow explicit format selection via query parameter (e.g. ?format=human)
+        fmt_q = request.query.get("format")
+        if fmt_q and fmt_q in FORMATTERS:
+            fmt_func = FORMATTERS[fmt_q]
         else:
-            return function(*args, fmt=iso, **kwargs)
+            host = request.urlparts.netloc
+            if host.startswith("unix.") or host.startswith("u."):
+                fmt_func = unix
+            elif host.startswith("human.") or host.startswith("h."):
+                fmt_func = human
+            else:
+                fmt_func = iso
+
+        return function(*args, fmt=fmt_func, **kwargs)
 
     return wrapper
 
@@ -67,6 +94,8 @@ def generate_delta(digits, unit, timeword):
         return datetime.timedelta(hours=delta)
     if unit in ["days", "dys", "day", "d"]:
         return datetime.timedelta(days=delta)
+    if unit in ["weeks", "week", "w"]:
+        return datetime.timedelta(weeks=delta)
     if unit in ["years", "year", "y"]:
         # timedelta function does not have a year parameter
         # therefore get the total number of days * 365
